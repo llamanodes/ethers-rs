@@ -351,7 +351,7 @@ impl Shared {
             let read = reader.read_buf(&mut buf).await?;
             if read == 0 {
                 // eof, socket was closed
-                return Err(IpcError::ServerExit)
+                return Err(IpcError::ServerExit);
             }
 
             // parse the received bytes into 0-n jsonrpc messages
@@ -413,7 +413,10 @@ impl Shared {
         while let Some(Ok(response)) = de.next() {
             match response {
                 Response::Success { id, result } => self.send_response(id, Ok(result.to_owned())),
-                Response::Error { id, error } => self.send_response(id, Err(error)),
+                Response::Error { id, error } => {
+                    // TODO: this id is wrong. but changing it to be an option everywhere to support error responses is going to be a lot more work
+                    self.send_response(id.unwrap_or_default(), Err(error))
+                }
                 Response::Notification { params, .. } => self.send_notification(params),
             };
         }
@@ -427,7 +430,7 @@ impl Shared {
             Some(tx) => tx,
             None => {
                 tracing::warn!(%id, "no pending request exists for the response ID");
-                return
+                return;
             }
         };
 
@@ -448,7 +451,7 @@ impl Shared {
                     id = ?params.subscription,
                     "no subscription exists for the notification ID"
                 );
-                return
+                return;
             }
         };
 
