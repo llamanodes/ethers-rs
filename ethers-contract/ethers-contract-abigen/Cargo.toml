@@ -19,7 +19,6 @@ keywords.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-rustc-args = ["--cfg", "docsrs"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [package.metadata.playground]
@@ -31,7 +30,7 @@ ethers-core = { workspace = true, features = ["macros"] }
 proc-macro2.workspace = true
 quote.workspace = true
 syn = { workspace = true, features = ["full"] }
-prettyplease = "0.2.4"
+prettyplease = "0.2"
 
 Inflector.workspace = true
 serde.workspace = true
@@ -50,15 +49,10 @@ reqwest = { workspace = true, features = ["blocking"], optional = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-# NOTE: this enables wasm compatibility for getrandom indirectly
-getrandom.workspace = true
-
 [features]
 online = ["reqwest", "ethers-etherscan", "url", "tokio"]
-openssl = ["online", "reqwest/native-tls", "ethers-etherscan/openssl"]
-rustls = ["online", "reqwest/rustls-tls", "ethers-etherscan/rustls"]
+rustls = ["reqwest?/rustls-tls", "ethers-etherscan?/rustls"]
+openssl = ["reqwest?/native-tls", "ethers-etherscan?/openssl"]
 
 [dev-dependencies]
 tempfile.workspace = true
-ethers-solc = { workspace = true, features = ["project-util", "svm-solc"] }

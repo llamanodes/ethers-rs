@@ -390,6 +390,18 @@ pub trait Middleware: Sync + Send + Debug {
         self.inner().get_transaction(transaction_hash).await.map_err(MiddlewareError::from_err)
     }
 
+    /// Gets the transaction with block and index
+    async fn get_transaction_by_block_and_index<T: Into<BlockId> + Send + Sync>(
+        &self,
+        block_hash_or_number: T,
+        idx: U64,
+    ) -> Result<Option<Transaction>, ProviderError> {
+        self.inner()
+            .get_transaction_by_block_and_index(block_hash_or_number, idx)
+            .await
+            .map_err(MiddlewareError::from_err)
+    }
+
     /// Gets the transaction receipt with `transaction_hash`
     async fn get_transaction_receipt<T: Send + Sync + Into<TxHash>>(
         &self,
@@ -673,12 +685,9 @@ pub trait Middleware: Sync + Send + Debug {
 
     // Miner namespace
 
-    /// Starts the miner with the given number of threads. If threads is nil, the number of workers
-    /// started is equal to the number of logical CPUs that are usable by this process. If mining
-    /// is already running, this method adjust the number of threads allowed to use and updates the
-    /// minimum price required by the transaction pool.
-    async fn start_mining(&self, threads: Option<usize>) -> Result<(), Self::Error> {
-        self.inner().start_mining(threads).await.map_err(MiddlewareError::from_err)
+    /// Starts the miner.
+    async fn start_mining(&self) -> Result<(), Self::Error> {
+        self.inner().start_mining().await.map_err(MiddlewareError::from_err)
     }
 
     /// Stop terminates the miner, both at the consensus engine level as well as at
@@ -734,6 +743,36 @@ pub trait Middleware: Sync + Send + Debug {
     ) -> Result<GethTrace, Self::Error> {
         self.inner()
             .debug_trace_call(req, block, trace_options)
+            .await
+            .map_err(MiddlewareError::from_err)
+    }
+
+    /// Replays all transactions in a given block (specified by block number) and returns the traces
+    /// configured with passed options
+    /// Ref:
+    /// [Here](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-debug#debugtraceblockbynumber)
+    async fn debug_trace_block_by_number(
+        &self,
+        block: Option<BlockNumber>,
+        trace_options: GethDebugTracingOptions,
+    ) -> Result<Vec<GethTrace>, Self::Error> {
+        self.inner()
+            .debug_trace_block_by_number(block, trace_options)
+            .await
+            .map_err(MiddlewareError::from_err)
+    }
+
+    /// Replays all transactions in a given block (specified by block hash) and returns the traces
+    /// configured with passed options
+    /// Ref:
+    /// [Here](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-debug#debugtraceblockbyhash)
+    async fn debug_trace_block_by_hash(
+        &self,
+        block: H256,
+        trace_options: GethDebugTracingOptions,
+    ) -> Result<Vec<GethTrace>, Self::Error> {
+        self.inner()
+            .debug_trace_block_by_hash(block, trace_options)
             .await
             .map_err(MiddlewareError::from_err)
     }
@@ -875,7 +914,7 @@ pub trait Middleware: Sync + Send + Debug {
         self.inner().subscribe_blocks().await.map_err(MiddlewareError::from_err)
     }
 
-    /// Subscribe to a stream of pending transactions.
+    /// Subscribe to a stream of pending transaction hashes.
     ///
     /// This function is only available on pubsub clients, such as Websockets
     /// or IPC. For a polling alternative available over HTTP, use
@@ -888,6 +927,23 @@ pub trait Middleware: Sync + Send + Debug {
         <Self as Middleware>::Provider: PubsubClient,
     {
         self.inner().subscribe_pending_txs().await.map_err(MiddlewareError::from_err)
+    }
+
+    /// Subscribe to a stream of pending transaction bodies.
+    ///
+    /// This function is only available on pubsub clients, such as Websockets
+    /// or IPC. For a polling alternative available over HTTP, use
+    /// [`Middleware::watch_pending_transactions`]. However, be aware that
+    /// polling increases RPC usage drastically.
+    ///
+    /// Note: This endpoint is compatible only with Geth client version 1.11.0 or later.
+    async fn subscribe_full_pending_txs(
+        &self,
+    ) -> Result<SubscriptionStream<'_, Self::Provider, Transaction>, Self::Error>
+    where
+        <Self as Middleware>::Provider: PubsubClient,
+    {
+        self.inner().subscribe_full_pending_txs().await.map_err(MiddlewareError::from_err)
     }
 
     /// Subscribe to a stream of event logs matchin the provided [`Filter`].

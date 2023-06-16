@@ -17,7 +17,6 @@ exclude.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-rustc-args = ["--cfg", "docsrs"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [package.metadata.playground]
@@ -65,5 +64,6 @@ tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 [features]
 default = ["rustls"]
 celo = ["ethers-core/celo", "ethers-providers/celo", "ethers-signers/celo", "ethers-contract/celo"]
-openssl = ["reqwest/native-tls"]
+optimism = ["ethers-core/optimism", "ethers-providers/optimism", "ethers-contract/optimism"]
 rustls = ["reqwest/rustls-tls"]
+openssl = ["reqwest/native-tls"]

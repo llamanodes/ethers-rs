@@ -89,6 +89,8 @@ pub enum Chain {
 
     ScrollAlphaTestnet = 534353,
 
+    Metis = 1088,
+
     #[strum(to_string = "xdai", serialize = "gnosis", serialize = "gnosis-chain")]
     #[serde(alias = "xdai", alias = "gnosis", alias = "gnosis_chain")]
     XDai = 100,
@@ -151,9 +153,14 @@ pub enum Chain {
 
     BaseGoerli = 84531,
 
+    LineaTestnet = 59140,
+
     #[strum(to_string = "zksync")]
     #[serde(alias = "zksync")]
     ZkSync = 324,
+    #[strum(to_string = "zksync-testnet")]
+    #[serde(alias = "zksync_testnet")]
+    ZkSyncTestnet = 280,
 }
 
 // === impl Chain ===
@@ -261,7 +268,10 @@ impl Chain {
     ///     Chain::Mainnet.average_blocktime_hint(),
     ///     Some(Duration::from_millis(12_000)),
     /// );
-    /// assert_eq!(Chain::Optimism.average_blocktime_hint(), None);
+    /// assert_eq!(
+    ///     Chain::Optimism.average_blocktime_hint(),
+    ///     Some(Duration::from_millis(2_000)),
+    /// );
     /// ```
     pub const fn average_blocktime_hint(&self) -> Option<Duration> {
         use Chain::*;
@@ -269,6 +279,7 @@ impl Chain {
         let ms = match self {
             Mainnet => 12_000,
             Arbitrum | ArbitrumTestnet | ArbitrumGoerli | ArbitrumNova => 1_300,
+            Optimism | OptimismGoerli => 2_000,
             Polygon | PolygonMumbai => 2_100,
             Moonbeam | Moonriver => 12_500,
             BinanceSmartChain | BinanceSmartChainTestnet => 3_000,
@@ -285,10 +296,9 @@ impl Chain {
             ScrollAlphaTestnet => 3_000,
             // Explicitly exhaustive. See NB above.
             Morden | Ropsten | Rinkeby | Goerli | Kovan | XDai | Chiado | Sepolia | Moonbase |
-            MoonbeamDev | Optimism | OptimismGoerli | OptimismKovan | Poa | Sokol | Rsk |
-            EmeraldTestnet | Boba | BaseGoerli | ZkSync | PolygonZkEvm | PolygonZkEvmTestnet => {
-                return None
-            }
+            MoonbeamDev | OptimismKovan | Poa | Sokol | Rsk | EmeraldTestnet | Boba |
+            BaseGoerli | ZkSync | ZkSyncTestnet | PolygonZkEvm | PolygonZkEvmTestnet | Metis |
+            LineaTestnet => return None,
         };
 
         Some(Duration::from_millis(ms))
@@ -309,17 +319,12 @@ impl Chain {
 
         match self {
             // Known legacy chains / non EIP-1559 compliant
-            Optimism |
-            OptimismGoerli |
             OptimismKovan |
             Fantom |
             FantomTestnet |
             BinanceSmartChain |
             BinanceSmartChainTestnet |
-            Arbitrum |
             ArbitrumTestnet |
-            ArbitrumGoerli |
-            ArbitrumNova |
             Rsk |
             Oasis |
             Emerald |
@@ -329,6 +334,7 @@ impl Chain {
             CeloBaklava |
             Boba |
             ZkSync |
+            ZkSyncTestnet |
             BaseGoerli |
             PolygonZkEvm |
             PolygonZkEvmTestnet => true,
@@ -337,18 +343,35 @@ impl Chain {
             Mainnet |
             Goerli |
             Sepolia |
+            Optimism |
+            OptimismGoerli |
             Polygon |
             PolygonMumbai |
             Avalanche |
             AvalancheFuji |
+            Arbitrum |
+            ArbitrumGoerli |
+            ArbitrumNova |
             FilecoinMainnet |
+            LineaTestnet |
             FilecoinHyperspaceTestnet => false,
 
             // Unknown / not applicable, default to false for backwards compatibility
             Dev | AnvilHardhat | Morden | Ropsten | Rinkeby | Cronos | CronosTestnet | Kovan |
             Sokol | Poa | XDai | Moonbeam | MoonbeamDev | Moonriver | Moonbase | Evmos |
             EvmosTestnet | Chiado | Aurora | AuroraTestnet | Canto | CantoTestnet |
-            ScrollAlphaTestnet => false,
+            ScrollAlphaTestnet | Metis => false,
+        }
+    }
+
+    /// Returns whether the chain supports the `PUSH0` opcode or not.
+    ///
+    /// For more information, see EIP-3855:
+    /// `<https://eips.ethereum.org/EIPS/eip-3855>`
+    pub const fn supports_push0(&self) -> bool {
+        match self {
+            Chain::Mainnet | Chain::Goerli | Chain::Sepolia => true,
+            _ => false,
         }
     }
 
@@ -445,6 +468,10 @@ impl Chain {
                 ("https://blockscout.scroll.io/api", "https://blockscout.scroll.io/")
             }
 
+            Metis => {
+                ("https://andromeda-explorer.metis.io/api", "https://andromeda-explorer.metis.io/")
+            }
+
             Chiado => {
                 ("https://blockscout.chiadochain.net/api", "https://blockscout.chiadochain.net")
             }
@@ -497,6 +524,13 @@ impl Chain {
 
             ZkSync => {
                 ("https://zksync2-mainnet-explorer.zksync.io/", "https://explorer.zksync.io/")
+            }
+            ZkSyncTestnet => (
+                "https://zksync2-testnet-explorer.zksync.dev/",
+                "https://goerli.explorer.zksync.io/",
+            ),
+            LineaTestnet => {
+                ("https://explorer.goerli.linea.build/api", "https://explorer.goerli.linea.build/")
             }
 
             AnvilHardhat | Dev | Morden | MoonbeamDev | FilecoinMainnet => {
@@ -562,6 +596,7 @@ impl Chain {
             // Explicitly exhaustive. See NB above.
             XDai |
             ScrollAlphaTestnet |
+            Metis |
             Chiado |
             Sepolia |
             Rsk |
@@ -575,7 +610,9 @@ impl Chain {
             AnvilHardhat |
             Dev |
             ZkSync |
+            ZkSyncTestnet |
             FilecoinMainnet |
+            LineaTestnet |
             FilecoinHyperspaceTestnet => return None,
         };
 

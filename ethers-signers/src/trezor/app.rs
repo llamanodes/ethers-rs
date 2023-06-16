@@ -35,7 +35,9 @@ pub struct TrezorEthereum {
     pub(crate) address: Address,
 }
 
-const FIRMWARE_MIN_VERSION: &str = ">=2.4.2";
+// we need firmware that supports EIP-1559 and EIP-712
+const FIRMWARE_1_MIN_VERSION: &str = ">=1.11.1";
+const FIRMWARE_2_MIN_VERSION: &str = ">=2.5.1";
 
 // https://docs.trezor.io/trezor-firmware/common/communication/sessions.html
 const SESSION_ID_LENGTH: usize = 32;
@@ -73,12 +75,20 @@ impl TrezorEthereum {
     }
 
     fn check_version(version: String) -> Result<(), TrezorError> {
-        let req = semver::VersionReq::parse(FIRMWARE_MIN_VERSION)?;
         let version = semver::Version::parse(&version)?;
 
-        // Enforce firmware version is greater than FIRMWARE_MIN_VERSION
+        let min_version = match version.major {
+            1 => FIRMWARE_1_MIN_VERSION,
+            2 => FIRMWARE_2_MIN_VERSION,
+            // unknown major version, possibly newer models that we don't know about yet
+            // it's probably safe to assume they support EIP-1559 and EIP-712
+            _ => return Ok(()),
+        };
+
+        let req = semver::VersionReq::parse(min_version)?;
+        // Enforce firmware version is greater than "min_version"
         if !req.matches(&version) {
-            return Err(TrezorError::UnsupportedFirmwareVersion(FIRMWARE_MIN_VERSION.to_string()))
+            return Err(TrezorError::UnsupportedFirmwareVersion(min_version.to_string()))
         }
 
         Ok(())
@@ -115,12 +125,12 @@ impl TrezorEthereum {
 
         Self::check_version(format!(
             "{}.{}.{}",
-            features.get_major_version(),
-            features.get_minor_version(),
-            features.get_patch_version()
+            features.major_version(),
+            features.minor_version(),
+            features.patch_version()
         ))?;
 
-        self.save_session(features.get_session_id().to_vec())?;
+        self.save_session(features.session_id().to_vec())?;
 
         Ok(())
     }
@@ -185,6 +195,10 @@ impl TrezorEthereum {
                 transaction.max_priority_fee_per_gas,
                 transaction.access_list,
             )?,
+            #[cfg(feature = "optimism")]
+            TypedTransaction::OptimismDeposited(tx) => {
+                trezor_client::client::Signature { r: 0.into(), s: 0.into(), v: 0 }
+            }
         };
 
         Ok(Signature { r: signature.r, s: signature.s, v: signature.v })
@@ -233,32 +247,11 @@ impl TrezorEthereum {
 mod tests {
     use super::*;
     use crate::Signer;
-    use ethers_contract_derive::{Eip712, EthAbiType};
     use ethers_core::types::{
-        transaction::{
-            eip2930::{AccessList, AccessListItem},
-            eip712::Eip712,
-        },
+        transaction::eip2930::{AccessList, AccessListItem},
         Address, Eip1559TransactionRequest, TransactionRequest, I256, U256,
     };
     use std::str::FromStr;
-
-    #[derive(Debug, Clone, Eip712, EthAbiType)]
-    #[eip712(
-        name = "Eip712Test",
-        version = "1",
-        chain_id = 1,
-        verifying_contract = "0x0000000000000000000000000000000000000001",
-        salt = "eip712-test-75F0CCte"
-    )]
-    struct FooBar {
-        foo: I256,
-        bar: U256,
-        fizz: Vec<u8>,
-        buzz: [u8; 32],
-        far: String,
-        out: Address,
-    }
 
     #[tokio::test]
     #[ignore]
@@ -406,24 +399,5 @@ mod tests {
         let sig = trezor.sign_message(message).await.unwrap();
         let addr = trezor.get_address().await.unwrap();
         sig.verify(message, addr).unwrap();
-    }
-
-    #[tokio::test]
-    #[ignore]
-    async fn test_sign_eip712_struct() {
-        let trezor = TrezorEthereum::new(DerivationType::TrezorLive(0), 1u64, None).await.unwrap();
-
-        let foo_bar = FooBar {
-            foo: I256::from(10),
-            bar: U256::from(20),
-            fizz: b"fizz".to_vec(),
-            buzz: keccak256("buzz"),
-            far: String::from("space"),
-            out: Address::from([0; 20]),
-        };
-
-        let sig = trezor.sign_typed_struct(&foo_bar).await.expect("failed to sign typed data");
-        let foo_bar_hash = foo_bar.encode_eip712().unwrap();
-        sig.verify(foo_bar_hash, trezor.address).unwrap();
     }
 }

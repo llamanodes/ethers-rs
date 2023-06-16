@@ -20,7 +20,6 @@ exclude.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-rustc-args = ["--cfg", "docsrs"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [package.metadata.playground]
@@ -38,10 +37,6 @@ thiserror.workspace = true
 tracing.workspace = true
 semver.workspace = true
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-# NOTE: this enables wasm compatibility for getrandom indirectly
-getrandom.workspace = true
-
 [dev-dependencies]
 ethers-solc.workspace = true
 
@@ -52,5 +47,9 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
 default = ["rustls"]
-openssl = ["reqwest/native-tls"]
 rustls = ["reqwest/rustls-tls"]
+openssl = ["reqwest/native-tls"]
+
+ethers-solc = ["dep:ethers-solc"]
+solc-full = ["ethers-solc?/full"]
+solc-tests = ["ethers-solc?/tests"]

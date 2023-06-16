@@ -15,7 +15,7 @@ Add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-ethers = "1.0.2"
+ethers = "2.0"
 ```
 
 And this to your code:
@@ -45,7 +45,7 @@ address that, you must use the `legacy` feature flag:
 
 ```toml
 [dependencies]
-ethers = { version = "1.0.2", features = ["legacy"] }
+ethers = { version = "2.0", features = ["legacy"] }
 ```
 
 ### Polygon support
@@ -58,13 +58,31 @@ You can get one [here](https://polygonscan.io/apis).
 There is abigen support for Avalanche and the Fuji test network. It is recommended that you set the `SNOWTRACE_API_KEY` environment variable.
 You can get one [here](https://snowtrace.io/apis).
 
+### Optimism support
+
+Optimism is supported via the `optimism` feature flag:
+
+```toml
+[dependencies]
+ethers = { version = "2.0", features = ["optimism"] }
+```
+
+Optimism has a new transaction type: [Deposited Transactions](https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#the-deposited-transaction-type)
+with type ID `0x7E`, which requires 3 new fields:
+
+-   `sourceHash`: The hash which uniquely identifies the origin of the deposit
+-   `mint`: The ETH value to mint on L2.
+-   `isSystemTx`: True if the tx does not interact with the L2 block gas pool
+
+**Note:** the `optimism` and `celo` features are mutually exclusive.
+
 ### Celo Support
 
 [Celo](https://celo.org) support is turned on via the feature-flag `celo`:
 
 ```toml
 [dependencies]
-ethers = { version = "1.0.2", features = ["celo"] }
+ethers = { version = "2.0", features = ["celo"] }
 ```
 
 Celo's transactions differ from Ethereum transactions by including 3 new fields:
@@ -75,6 +93,8 @@ Celo's transactions differ from Ethereum transactions by including 3 new fields:
 
 The feature flag enables these additional fields in the transaction request builders and
 in the transactions which are fetched over JSON-RPC.
+
+**Note:** the `optimism` and `celo` features are mutually exclusive.
 
 ## Features
 
@@ -87,6 +107,7 @@ in the transactions which are fetched over JSON-RPC.
 -   [x] Celo support
 -   [x] Polygon support
 -   [x] Avalanche support
+-   [x] Optimism support
 -   [x] Websockets / `eth_subscribe`
 -   [x] Hardware Wallet Support
 -   [x] Parity APIs (`tracing`, `parity_blockWithReceipts`)
@@ -101,7 +122,7 @@ Websockets support is turned on via the feature-flag `ws`:
 
 ```toml
 [dependencies]
-ethers = { version = "1.0.2", features = ["ws"] }
+ethers = { version = "2.0", features = ["ws"] }
 ```
 
 ### Interprocess Communication (IPC)
@@ -110,7 +131,7 @@ IPC support is turned on via the feature-flag `ipc`:
 
 ```toml
 [dependencies]
-ethers = { version = "1.0.2", features = ["ipc"] }
+ethers = { version = "2.0", features = ["ipc"] }
 ```
 
 ### HTTP Secure (HTTPS)
@@ -122,30 +143,29 @@ To enable `rustls`:
 
 ```toml
 [dependencies]
-ethers = { version = "1.0.2", features = ["rustls"] }
+ethers = { version = "2.0", features = ["rustls"] }
 ```
 
 To enable `openssl`:
 
 ```toml
 [dependencies]
-ethers = { version = "1.0.2", features = ["openssl"] }
+ethers = { version = "2.0", features = ["openssl"] }
 ```
 
 ## Note on WASM and FFI bindings
 
-You should be able to build a wasm app that uses ethers-rs (see the [example](./examples/wasm) for reference). If ethers fails to
-compile in WASM, please
-[open an issue](https://github.com/gakonst/ethers-rs/issues/new/choose).
+You should be able to build a wasm app that uses ethers-rs (see the [example](./examples/wasm) for reference).
+If ethers fails to compile in WASM, please [open an issue][issue].
 There is currently no plan to provide an official JS/TS-accessible library
-interface. We believe [viem](https://viem.sh) or [ethers.js](https://docs.ethers.io/v6/) serves that need
-very well.
+interface, as we believe [viem](https://viem.sh) or [ethers.js](https://docs.ethers.io/v6/)
+serve that need very well.
 
 Similarly, you should be able to build FFI bindings to ethers-rs. If ethers
-fails to compile in c lib formats, please
-[open an issue](https://github.com/gakonst/ethers-rs/issues/new/choose).
-There is currently no plan to provide official FFI bindings, and as ethers-rs is
-not yet stable 1.0.0, its interface may change significantly between versions.
+fails to compile in C library formats, please [open an issue][issue].
+There is currently no plan to provide official FFI bindings.
+
+[issue]: https://github.com/gakonst/ethers-rs/issues/new/choose
 
 ## Getting Help
 
@@ -178,6 +198,7 @@ You can get one [here](https://etherscan.io/apis).
 
 -   [Yield Liquidator](https://github.com/yieldprotocol/yield-liquidator/): Liquidator for Yield Protocol
 -   [MEV Inspect](https://github.com/flashbots/mev-inspect-rs/): Miner Extractable Value inspector
+-   [Ethers CCIP-Read](https://github.com/ensdomains/ethers-ccip-read): Ethers middleware for ENS [CCIP-Read](https://eips.ethereum.org/EIPS/eip-3668) support
 -   [Ethers Flashbots](https://github.com/onbjerg/ethers-flashbots): Ethers middleware for [Flashbots](https://docs.flashbots.net)
 -   [Ethers Fireblocks](https://github.com/gakonst/ethers-fireblocks): Ethers middleware and signer for [Fireblocks](https://fireblocks.io)' API
 -   [Celo Threshold BLS DKG](https://github.com/celo-org/celo-threshold-bls-rs/): CLI for using Celo as a data availability network for the Joint-Feldman BLS DKG

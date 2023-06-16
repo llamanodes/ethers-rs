@@ -99,6 +99,7 @@ pub use ethers_providers as providers;
 #[doc(inline)]
 pub use ethers_signers as signers;
 #[doc(inline)]
+#[cfg(feature = "ethers-solc")]
 pub use ethers_solc as solc;
 
 #[doc(inline)]
@@ -106,7 +107,7 @@ pub use ethers_core::{abi, types, utils};
 
 /// Easy imports of frequently used type definitions and traits.
 #[doc(hidden)]
-#[allow(ambiguous_glob_reexports)]
+#[allow(unknown_lints, ambiguous_glob_reexports)]
 pub mod prelude {
     pub use super::addressbook::contract;
 
@@ -122,6 +123,7 @@ pub mod prelude {
 
     pub use super::signers::*;
 
+    #[cfg(feature = "ethers-solc")]
     pub use super::solc::*;
 }
 

@@ -17,7 +17,6 @@ exclude.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-rustc-args = ["--cfg", "docsrs"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [package.metadata.playground]
@@ -26,6 +25,7 @@ all-features = true
 [dependencies]
 ethers-providers.workspace = true
 ethers-core.workspace = true
+ethers-signers.workspace = true
 
 serde.workspace = true
 serde_json.workspace = true
@@ -40,8 +40,6 @@ ethers-contract-abigen = { workspace = true, optional = true }
 ethers-contract-derive = { workspace = true, optional = true }
 
 [dev-dependencies]
-ethers-signers.workspace = true
-ethers-solc.workspace = true
 ethers-providers = { workspace = true, features = ["ws"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
@@ -50,14 +48,16 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 [features]
 default = ["abigen"]
 
-abigen-offline = ["ethers-contract-abigen", "ethers-contract-derive"]
-abigen = ["abigen-offline", "ethers-contract-abigen/online"]
+abigen = ["ethers-contract-abigen", "ethers-contract-derive"]
+abigen-online = ["abigen", "ethers-contract-abigen/online"]
 
 celo = ["legacy", "ethers-core/celo", "ethers-providers/celo"]
+optimism = ["ethers-core/optimism", "ethers-providers/optimism"]
 legacy = []
 
 rustls = ["ethers-contract-abigen/rustls"]
 openssl = ["ethers-contract-abigen/openssl"]
 
 # Deprecated
+abigen-offline = ["abigen"]
 eip712 = []
