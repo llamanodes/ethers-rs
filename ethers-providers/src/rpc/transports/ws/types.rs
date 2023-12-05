@@ -101,8 +101,8 @@ impl<'de> Deserialize<'de> for PubSubItem {
                                 return Err(de::Error::duplicate_field("error"));
                             }
 
-                            let value: JsonRpcError = map.next_value()?;
-                            error = Some(value);
+                            let value: Option<JsonRpcError> = map.next_value()?;
+                            error = value;
                         }
                         "method" => {
                             if method.is_some() {
